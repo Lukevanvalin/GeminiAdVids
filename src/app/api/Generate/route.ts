@@ -1,4 +1,5 @@
-import { google } from '@ai-sdk/google';
+export const maxDuration = 60; // This forces the timeout to 60 seconds
+export const dynamic = 'force-dynamic';import { google } from '@ai-sdk/google';
 import { generateText, experimental_generateVideo as generateVideo } from 'ai';
 
 export async function POST(req: Request) {
