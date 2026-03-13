@@ -16,5 +16,16 @@ export async function POST(req: Request) {
     prompt: `Professional cinematic 4K video. A user interacts with a dashboard that looks like ${uiDescription}. ${prompt}.`,
   });
 
-  return new Response(JSON.stringify({ url: video.url }));
+  // ... (keep the generateVideo call above)
+
+  // THE FIX: Convert the raw video data into a Base64 string for the browser
+  const videoFile = video; // This is the 'GeneratedFile'
+  const base64Video = videoFile.base64;
+  const mimeType = videoFile.mediaType || 'video/mp4';
+
+  return new Response(JSON.stringify({ 
+    // We send a "Data URL" so the browser can play it immediately
+    url: `data:${mimeType};base64,${base64Video}` 
+  }));
+}
 }
