@@ -2,30 +2,28 @@ import { google } from '@ai-sdk/google';
 import { generateText, experimental_generateVideo as generateVideo } from 'ai';
 
 export async function POST(req: Request) {
-  const { prompt, context } = await req.json();
+  try {
+    const { prompt, context } = await req.json();
 
-  // 1. Gemini researches the ERP vibe
-  const { text: uiDescription } = await generateText({
-    model: google('gemini-1.5-pro'),
-    prompt: `Research ${context}. Describe its UI layout (colors, grids) so I can recreate it without using proprietary logos.`,
-  });
+    // 1. Researching the ERP
+    const { text: uiDescription } = await generateText({
+      model: google('gemini-1.5-pro'),
+      prompt: `Research ${context}. Describe its UI layout for a video generation prompt.`,
+    });
 
-  // 2. Veo 3.1 generates the cinematic video
-  const { video } = await generateVideo({
-    model: google.video('veo-3.1-generate-001'),
-    prompt: `Professional cinematic 4K video. A user interacts with a dashboard that looks like ${uiDescription}. ${prompt}.`,
-  });
+    // 2. Generating the Video
+    const { video } = await generateVideo({
+      model: google.video('veo-3.1-generate-001'),
+      prompt: `Cinematic 4K. ${prompt}. UI background looks like ${uiDescription}.`,
+    });
 
-  // ... (keep the generateVideo call above)
+    // 3. The Bulletproof Return
+    // We use 'as any' to stop TypeScript from complaining about the 'url' property
+    const videoData = video as any;
+    const finalUrl = videoData.url || `data:${videoData.mediaType};base64,${videoData.base64}`;
 
-  // THE FIX: Convert the raw video data into a Base64 string for the browser
-  const videoFile = video; // This is the 'GeneratedFile'
-  const base64Video = videoFile.base64;
-  const mimeType = videoFile.mediaType || 'video/mp4';
-
-  return new Response(JSON.stringify({ 
-    // We send a "Data URL" so the browser can play it immediately
-    url: `data:${mimeType};base64,${base64Video}` 
-  }));
-}
+    return new Response(JSON.stringify({ url: finalUrl }));
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
 }
